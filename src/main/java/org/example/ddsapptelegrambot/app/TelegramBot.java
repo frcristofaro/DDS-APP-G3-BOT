@@ -63,25 +63,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 if (text.startsWith("/start")) {
                     respuesta = "👋 ¡Hola! Soy el bot del Grupo 3. Probá el comando /pdi <id> para consultar un PdI.";
                 } else if (text.startsWith("/pdi")) {
-                    String[] parts = text.split(" ");
-                    if (parts.length == 2) {
-                        Long id = Long.parseLong(parts[1]);
-                        respuesta = procesadorPdIService.obtenerPdi(id);
-                        sendMarkdown(chatId, respuesta);
-
-                        // Intentar enviar imagen si existe
-                        String url = procesadorPdIService.obtenerImagenPdI(id);
-                        if (url != null) sendPhoto(chatId, url);
-                        return;
-                    } else {
-                        respuesta = "⚙️ Uso correcto: /pdi <id>";
-                    }
+                    enviarPDI(text, chatId);
                 } else {
                     // 👇 respuesta genérica si el comando no se reconoce
                     respuesta = "🤔 No entendí. Probá con /start o /pdi <id>.";
+                    sendMarkdown(chatId, respuesta);
                 }
 
-                sendMarkdown(chatId, respuesta);
+
 
             } catch (Exception e) {
                 sendMarkdown(chatId, "❌ Tu solicitud no se pudo procesar correctamente.");
@@ -127,6 +116,23 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } catch (TelegramApiException e) {
             System.err.println("No se pudo notificar el apagado del bot: " + e.getMessage());
+        }
+    }
+
+    public void enviarPDI (String textoRecibido,Long chatId) {
+        String respuesta;
+        String[] parts = textoRecibido.split(" ");
+        if (parts.length == 2) {
+            Long id = Long.parseLong(parts[1]);
+            respuesta = procesadorPdIService.obtenerPdi(id);
+            sendMarkdown(chatId, respuesta);
+
+            // Intentar enviar imagen si existe
+//            String url = procesadorPdIService.obtenerImagenPdI(id);
+//            if (url != null) sendPhoto(chatId, url);
+//            return;
+        } else {
+            respuesta = "⚙️ Uso correcto: /pdi <id>";
         }
     }
 }
