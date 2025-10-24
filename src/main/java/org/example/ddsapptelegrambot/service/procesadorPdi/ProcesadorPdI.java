@@ -1,6 +1,6 @@
-package org.example.ddsapptelegrambot.app;
+package org.example.ddsapptelegrambot.service.procesadorPdi;
 
-import org.example.ddsapptelegrambot.app.dtos.PdIDTO;
+import org.example.ddsapptelegrambot.dtos.PdIDTO;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
