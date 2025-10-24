@@ -2,6 +2,7 @@ package org.example.ddsapptelegrambot.app;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.example.ddsapptelegrambot.app.dtos.PdIDTO;
 import org.example.ddsapptelegrambot.service.ProcesadorPdIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,9 +62,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             try {
                 if (text.startsWith("/start")) {
-                    respuesta = "👋 ¡Hola! Soy el bot del Grupo 3. Probá el comando /pdi <id> para consultar un PdI.";
+                    respuesta = "👋 ¡Hola! Soy el bot del Grupo 3\nProbá el comando /pdi <id> para consultar un PdI\nProbá /crear_pdi contenido|descripcion|hecho_id|lugar|momento|url_imagen para crear un PdI.";
                 } else if (text.startsWith("/pdi")) {
                     enviarPDI(text, chatId);
+                } else if (text.startsWith("/crear_pdi")) {
+                    crearPDI(text, chatId);
                 } else {
                     // 👇 respuesta genérica si el comando no se reconoce
                     respuesta = "🤔 No entendí. Probá con /start o /pdi <id>.";
@@ -133,6 +136,44 @@ public class TelegramBot extends TelegramLongPollingBot {
 //            return;
         } else {
             respuesta = "⚙️ Uso correcto: /pdi <id>";
+        }
+    }
+
+    public void crearPDI(String textoRecibido, Long chatId) {
+        try {
+            // Formato esperado:
+            // /crear_pdi contenido|descripcion|hecho_id|lugar|momento|url_imagen
+            String[] parts = textoRecibido.split(" ", 2);
+            if (parts.length < 2) {
+                sendMarkdown(chatId, "⚙️ Uso correcto:\n/crear_pdi contenido|descripcion|hecho_id|lugar|momento|url_imagen");
+                return;
+            }
+
+            String[] campos = parts[1].split("\\|");
+            if (campos.length != 6) {
+                sendMarkdown(chatId, "⚙️ Faltan campos. Formato:\ncontenido|descripcion|hecho_id|lugar|momento|url_imagen");
+                return;
+            }
+
+            PdIDTO dto = new PdIDTO();
+            dto.setContenido(campos[0].trim());
+            dto.setDescripcion(campos[1].trim());
+            dto.setHecho_id(campos[2].trim());
+            dto.setLugar(campos[3].trim());
+            dto.setMomento(campos[4].trim());
+            dto.setUrl_imagen(campos[5].trim());
+
+            String respuesta = procesadorPdIService.crearPdi(dto);
+            sendMarkdown(chatId, respuesta);
+
+            // Si hay URL de imagen, la mostramos
+//            if (dto.getUrl_imagen() != null && !dto.getUrl_imagen().isBlank()) {
+//                sendPhoto(chatId, dto.getUrl_imagen());
+//            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendMarkdown(chatId, "❌ Error al procesar el comando /crear_pdi");
         }
     }
 }

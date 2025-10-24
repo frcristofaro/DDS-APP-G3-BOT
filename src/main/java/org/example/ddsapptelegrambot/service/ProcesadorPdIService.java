@@ -1,6 +1,5 @@
 package org.example.ddsapptelegrambot.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.ddsapptelegrambot.app.ProcesadorPdI;
 import org.example.ddsapptelegrambot.app.dtos.PdIDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +10,6 @@ public class ProcesadorPdIService {
 
     @Autowired
     private ProcesadorPdI pdiClient;
-
-    private final ObjectMapper mapper = new ObjectMapper();
 
     public String obtenerPdi(Long id) {
         PdIDTO pdi = pdiClient.obtenerPdiPorId(id);
@@ -40,20 +37,43 @@ public class ProcesadorPdIService {
         return sb.toString();
     }
 
-    public String obtenerImagenPdI(Long id) {
+//    public String obtenerImagenPdI(Long id) {
+//
+//        PdIDTO pdi = pdiClient.obtenerPdiPorId(id);
+//
+//        if (pdi == null) {
+//            return null;
+//        }
+//
+//        String url = pdi.getUrl_imagen();
+//        if (url == null || url.isEmpty()) {
+//            return null;
+//        }
+//
+//        return url;
+//
+//    }
 
-        PdIDTO pdi = pdiClient.obtenerPdiPorId(id);
-
-        if (pdi == null) {
-            return null;
+    public String crearPdi(PdIDTO nuevoPdi) {
+        PdIDTO creado = pdiClient.crearPdi(nuevoPdi);
+        if (creado == null) {
+            return "❌ No se pudo crear el PdI.";
         }
 
-        String url = pdi.getUrl_imagen();
-        if (url == null || url.isEmpty()) {
-            return null;
-        }
-
-        return url;
-
+        return String.format("""
+                ✅ PdI creado correctamente:
+                🆔 ID: %s
+                🏷️ %s
+                📍 %s
+                📅 %s
+                💬 %s
+                """,
+                creado.getId(),
+                creado.getDescripcion(),
+                creado.getLugar(),
+                creado.getMomento(),
+                creado.getContenido()
+        );
     }
+
 }
