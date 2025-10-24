@@ -1,4 +1,4 @@
-package org.example.ddsapptelegrambot.dtos;
+package org.example.ddsapptelegrambot.app.dtos;
 
 import lombok.Data;
 

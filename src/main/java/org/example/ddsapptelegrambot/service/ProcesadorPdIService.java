@@ -1,19 +1,16 @@
-package org.example.ddsapptelegrambot.service.procesadorPdi;
+package org.example.ddsapptelegrambot.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.ddsapptelegrambot.dtos.PdIDTO;
+import org.example.ddsapptelegrambot.app.ProcesadorPdI;
+import org.example.ddsapptelegrambot.app.dtos.PdIDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ProcesadorPdIService {
 
-    private final ProcesadorPdI pdiClient;
-
     @Autowired
-    public ProcesadorPdIService(ProcesadorPdI pdiClient) {
-        this.pdiClient = pdiClient;
-    }
+    private ProcesadorPdI pdiClient;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
