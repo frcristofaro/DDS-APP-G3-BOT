@@ -3,6 +3,7 @@ package org.example.ddsapptelegrambot.app;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.example.ddsapptelegrambot.service.ProcesadorPdIService;
+import org.example.ddsapptelegrambot.service.ProcesadorSolicitudService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,12 +12,14 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private ProcesadorPdIService procesadorPdIService;
+
+    @Autowired
+    private ProcesadorSolicitudService procesadorSolicitudService;
 
     @Value("${telegram.bot.username}")
     private String botUsername;
@@ -36,16 +39,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         return botToken;
     }
 
-    //Mensaje Inicial al correr el programa
     @PostConstruct
     public void onStartup() {
         System.out.println("🤖 Bot iniciado, esperando mensajes para enviar notificaciones.");
-        // No enviamos mensaje hasta recibir un chatId válido
     }
 
     @Override
-    public void onUpdateReceived(org.telegram.telegrambots.meta.api.objects.Update update) {
-
+    public void onUpdateReceived(Update update) {
         System.out.println("📩 Mensaje recibido: " + update);
 
         if (update.hasMessage() && update.getMessage().hasText()) {
@@ -53,7 +53,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             final Long chatId = update.getMessage().getChatId();
             String respuesta;
 
-            // Guardamos el primer chatId válido como admin
             if (adminChatId == null) {
                 adminChatId = chatId;
                 sendMarkdown(adminChatId, "✅ Hola! Bot registrado correctamente y listo para usar.");
@@ -62,16 +61,15 @@ public class TelegramBot extends TelegramLongPollingBot {
             try {
                 if (text.startsWith("/start")) {
                     respuesta = "👋 ¡Hola! Soy el bot del Grupo 3. Probá el comando /pdi <id> para consultar un PdI.";
+                    sendMarkdown(chatId, respuesta);
                 } else if (text.startsWith("/pdi")) {
                     enviarPDI(text, chatId);
+                } else if (text.startsWith("/CrearSolicitud")) {
+                    crearSolicitudDesdeBot(text, chatId);
                 } else {
-                    // 👇 respuesta genérica si el comando no se reconoce
-                    respuesta = "🤔 No entendí. Probá con /start o /pdi <id>.";
+                    respuesta = "🤔 No entendí. Probá con /start, /pdi <id> o /CrearSolicitud <estado> <hechoId> <descripcion>";
                     sendMarkdown(chatId, respuesta);
                 }
-
-
-
             } catch (Exception e) {
                 sendMarkdown(chatId, "❌ Tu solicitud no se pudo procesar correctamente.");
                 e.printStackTrace();
@@ -103,7 +101,34 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    //Mensaje al finalizar el programa
+    private void enviarPDI(String textoRecibido, Long chatId) {
+        String respuesta;
+        String[] parts = textoRecibido.split(" ");
+        if (parts.length == 2) {
+            Long id = Long.parseLong(parts[1]);
+            respuesta = procesadorPdIService.obtenerPdi(id);
+            sendMarkdown(chatId, respuesta);
+        } else {
+            respuesta = "⚙️ Uso correcto: /pdi <id>";
+            sendMarkdown(chatId, respuesta);
+        }
+    }
+
+    private void crearSolicitudDesdeBot(String textoRecibido, Long chatId) {
+        String[] parts = textoRecibido.split(" ", 4); // /CrearSolicitud <estado> <hechoId> <descripcion>
+        if (parts.length < 4) {
+            sendMarkdown(chatId, "⚙️ Uso correcto: /CrearSolicitud <estado> <hechoId> <descripcion>");
+            return;
+        }
+
+        String estadoStr = parts[1];
+        String hechoId = parts[2];
+        String descripcion = parts[3];
+
+        String respuesta = procesadorSolicitudService.procesarSolicitud(descripcion, hechoId, estadoStr);
+        sendMarkdown(chatId, respuesta);
+    }
+
     @PreDestroy
     public void onShutdown() {
         System.out.println("🛑 Apagando bot...");
@@ -116,23 +141,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } catch (TelegramApiException e) {
             System.err.println("No se pudo notificar el apagado del bot: " + e.getMessage());
-        }
-    }
-
-    public void enviarPDI (String textoRecibido,Long chatId) {
-        String respuesta;
-        String[] parts = textoRecibido.split(" ");
-        if (parts.length == 2) {
-            Long id = Long.parseLong(parts[1]);
-            respuesta = procesadorPdIService.obtenerPdi(id);
-            sendMarkdown(chatId, respuesta);
-
-            // Intentar enviar imagen si existe
-//            String url = procesadorPdIService.obtenerImagenPdI(id);
-//            if (url != null) sendPhoto(chatId, url);
-//            return;
-        } else {
-            respuesta = "⚙️ Uso correcto: /pdi <id>";
         }
     }
 }
